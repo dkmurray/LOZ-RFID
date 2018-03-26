@@ -1,3 +1,8 @@
+#include <require_cpp11.h>
+#include <MFRC522.h>
+#include <deprecated.h>
+#include <MFRC522Extended.h>
+
 /*//////////////////////////////////////////////////////////////////////////////
 * ----------------------------------------------------------------------------
 * This is modified from a MFRC522 library example; see
@@ -34,11 +39,10 @@ MFRC522::MIFARE_Key key;
 // Initialize.
 //////////////////////////////////////////////////////////////////////////////*/
 void setup() {
-    pinMode(8, OUTPUT);  // Set up LED pin for blink test
     Serial.begin(9600);  // Initialize serial communications with the PC
     while (!Serial);     // Do nothing if no serial port is opened (for Arduinos based on ATMEGA32U4)
     SPI.begin();         // Init SPI bus
-    mfrc522.PCD_Init();  // Init MFRC522 card
+    mfrc522.PCD_Init();  // Init MFRC522 card 
 
     // Prepare the key (used both as key A and as key B)
     // Using FFFFFFFFFFFF which is the default at chip delivery from the factory
@@ -72,6 +76,7 @@ void loop() {
     //////////////////////////////////////////////////////////
     // Show some details of the PICC (that is: the tag/card)
     //////////////////////////////////////////////////////////
+    Serial.println();
     Serial.print(F("Card UID:"));
     dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size);
     Serial.println();
@@ -96,10 +101,10 @@ void loop() {
     byte sector         = 1;
     byte blockAddr      = 4;
     byte dataBlock[]    = {
-        0x01, 0x01, 0x01, 0x01,
-        0x01, 0x01, 0x01, 0x01,
-        0x01, 0x01, 0x01, 0x01,
-        0x01, 0x01, 0x01, 0x01
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0x0F, 0x0F, 0x0F, 0x0F
     };
     byte trailerBlock   = 7;
     MFRC522::StatusCode status;
@@ -154,6 +159,10 @@ void loop() {
     ////////////////////////////
     // Write data to the block
     ////////////////////////////
+    if(buffer[0] == 0x00){
+        dataBlock[0] = 0x01;
+    }
+
     Serial.print(F("Writing data into block ")); Serial.print(blockAddr);
     Serial.println(F(" Writing..."));
     dump_byte_array(dataBlock, 16); Serial.println();
