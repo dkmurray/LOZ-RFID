@@ -5,7 +5,7 @@
 
 #define LED_PIN     6
 #define NUM_LEDS    25
-#define BRIGHTNESS  64
+#define BRIGHTNESS  255
 #define LED_TYPE    WS2811
 #define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
@@ -46,6 +46,8 @@ void receiveEvent(int howMany) {
     redLEDS(true);
     audio.setVolume(5);
     audio.play("secret.wav");
+    delay(1500);
+    audio.pause();
     delay(1500);
     redLEDS(false);
   }
