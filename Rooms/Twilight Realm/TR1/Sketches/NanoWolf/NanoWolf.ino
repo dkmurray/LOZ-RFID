@@ -17,21 +17,13 @@
 
 TMRpcm audio;
 #define SD_ChipSelectPin 8
-#define relay4 7
-#define relay3 6
-#define relay2 5
-#define relay1 4
 
 void setup() {
-  pinMode(relay1, OUTPUT);
-  pinMode(relay2, OUTPUT);
-  pinMode(relay3, OUTPUT);
-  pinMode(relay4, OUTPUT);
-  digitalWrite(relay1, HIGH);
-  digitalWrite(relay2, HIGH);
-  digitalWrite(relay3, HIGH);
-  digitalWrite(relay4, HIGH);
   audio.speakerPin = 9;
+  pinMode(6, OUTPUT);
+  pinMode(7, OUTPUT);
+  digitalWrite(6, LOW);
+  digitalWrite(7, LOW);
   Wire.begin(8);                // join i2c bus with address #8
   Wire.onReceive(receiveEvent); // register event
   Serial.begin(9600);           // start serial for output
@@ -57,11 +49,13 @@ void receiveEvent(int howMany) {
   int x = Wire.read();    // receive byte as an integer
   Serial.println(x);         // print the integer
   if(x==200){
-    digitalWrite(relay4, LOW);
+    digitalWrite(6, HIGH);
+    digitalWrite(7, HIGH);
     audio.setVolume(5);
-    audio.play("test.wav");
-    delay(12000);
-    digitalWrite(relay4, HIGH);
+    audio.play("wolf2.wav");
+    delay(5000);
+    digitalWrite(6, LOW);
+    digitalWrite(7, LOW);
     audio.play("twilight.wav");
   }
 }

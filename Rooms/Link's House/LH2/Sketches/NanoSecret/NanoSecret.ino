@@ -1,36 +1,24 @@
 #include "TMRpcm.h"
 #include "SPI.h"
-
-// Wire Slave Receiver
-// by Nicholas Zambetti <http://www.zambetti.com>
-
-// Demonstrates use of the Wire library
-// Receives data as an I2C/TWI slave device
-// Refer to the "Wire Master Writer" example for use with this
-
-// Created 29 March 2006
-
-// This example code is in the public domain.
-
-
 #include <Wire.h>
+#include <FastLED.h>
+
+#define LED_PIN     6
+#define NUM_LEDS    25
+#define BRIGHTNESS  64
+#define LED_TYPE    WS2811
+#define COLOR_ORDER GRB
+CRGB leds[NUM_LEDS];
+
+#define UPDATES_PER_SECOND 100
 
 TMRpcm audio;
 #define SD_ChipSelectPin 8
-#define relay4 7
-#define relay3 6
-#define relay2 5
-#define relay1 4
 
 void setup() {
-  pinMode(relay1, OUTPUT);
-  pinMode(relay2, OUTPUT);
-  pinMode(relay3, OUTPUT);
-  pinMode(relay4, OUTPUT);
-  digitalWrite(relay1, HIGH);
-  digitalWrite(relay2, HIGH);
-  digitalWrite(relay3, HIGH);
-  digitalWrite(relay4, HIGH);
+  delay( 3000 ); // power-up safety delay
+  FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+  FastLED.setBrightness(  BRIGHTNESS );
   audio.speakerPin = 9;
   Wire.begin(8);                // join i2c bus with address #8
   Wire.onReceive(receiveEvent); // register event
@@ -42,9 +30,7 @@ void setup() {
 }
 
 void loop() {
-  audio.setVolume(5);
-  audio.play("twilight.wav");
-  delay(1800000);
+  delay(100);
 }
 
 // function that executes whenever data is received from master
@@ -57,11 +43,22 @@ void receiveEvent(int howMany) {
   int x = Wire.read();    // receive byte as an integer
   Serial.println(x);         // print the integer
   if(x==200){
-    digitalWrite(relay4, LOW);
+    redLEDS(true);
     audio.setVolume(5);
-    audio.play("test.wav");
-    delay(12000);
-    digitalWrite(relay4, HIGH);
-    audio.play("twilight.wav");
+    audio.play("secret.wav");
+    delay(1500);
+    redLEDS(false);
+  }
+}
+
+void redLEDS(boolean on){
+  for(int i; i < NUM_LEDS; i++){
+    if(on){
+      leds[i] = CRGB::Red;
+    }
+    else{
+      leds[i] = CRGB::Black;
+    }
+    FastLED.show();
   }
 }
