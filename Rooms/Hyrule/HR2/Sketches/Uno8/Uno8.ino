@@ -1,9 +1,7 @@
-#include <LiquidCrystal_I2C.h>
 #include <require_cpp11.h>
 #include <MFRC522.h>
 #include <deprecated.h>
 #include <MFRC522Extended.h>
-#include <Wire.h>
 
 /*//////////////////////////////////////////////////////////////////////////////
 * ----------------------------------------------------------------------------
@@ -29,6 +27,7 @@
 
 #include <SPI.h>
 #include <MFRC522.h>
+#include <Wire.h>
 
 #define RST_PIN         9
 #define SS_PIN          10
@@ -38,18 +37,15 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);  // Create MFRC522 instance.
 MFRC522::MIFARE_Key key;
 byte x = 200;
 
-LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);
-
 /*//////////////////////////////////////////////////////////////////////////////
 // Initialize.
 //////////////////////////////////////////////////////////////////////////////*/
 void setup() {
     Serial.begin(9600);  // Initialize serial communications with the PC
     while (!Serial);     // Do nothing if no serial port is opened (for Arduinos based on ATMEGA32U4)
+    Wire.begin();
     SPI.begin();         // Init SPI bus
     mfrc522.PCD_Init();  // Init MFRC522 card 
-    lcd.begin(16,2);//Defining 16 columns and 2 rows of lcd display
-    lcd.backlight();//To Power ON the back light
 
     // Prepare the key (used both as key A and as key B)
     // Using FFFFFFFFFFFF which is the default at chip delivery from the factory
@@ -63,8 +59,6 @@ void setup() {
     Serial.println();
 
     Serial.println(F("BEWARE: Data will be written to the PICC, in sector #1"));
-    lcd.setCursor(0,0);
-    lcd.print("Please Scan Tag");
 }
 
 /*//////////////////////////////////////////////////////////////////////////////
@@ -82,6 +76,7 @@ void loop() {
     ////////////////////////////
     if ( !mfrc522.PICC_ReadCardSerial()) return;
 
+    /*
     //////////////////////////////////////////////////////////
     // Show some details of the PICC (that is: the tag/card)
     //////////////////////////////////////////////////////////
@@ -102,6 +97,7 @@ void loop() {
         Serial.println(F("This sample only works with MIFARE Classic cards."));
         return;
     }
+    */
 
     //////////////////////////////////////////////
     // We write to sector #1, covering block #4
@@ -109,11 +105,18 @@ void loop() {
     //////////////////////////////////////////////
     byte sector         = 1;
     byte blockAddr      = 4;
+    byte dataBlock[]    = {
+        0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+        0xFF, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00
+    };
     byte trailerBlock   = 7;
     MFRC522::StatusCode status;
     byte buffer[18];
     byte size = sizeof(buffer);
 
+    
     /////////////////////////////
     // Authenticate using key A
     /////////////////////////////
@@ -124,6 +127,7 @@ void loop() {
         Serial.println(mfrc522.GetStatusCodeName(status));
         return;
     }
+
 
     /////////////////////////////
     // Read data from the block
@@ -138,11 +142,70 @@ void loop() {
     Serial.print(F("Data in block ")); Serial.print(blockAddr); Serial.println(F(":"));
     dump_byte_array(buffer, 16); Serial.println();
     Serial.println();
-
     
+
+    /////////////////////////////
+    // Authenticate using key B
+    /////////////////////////////
+    Serial.println(F("Authenticating again using key B..."));
+    status = (MFRC522::StatusCode) mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_B, trailerBlock, &key, &(mfrc522.uid));
+    if (status != MFRC522::STATUS_OK) {
+        Serial.print(F("PCD_Authenticate() failed: "));
+        Serial.println(mfrc522.GetStatusCodeName(status));
+        return;
+    }
+
+    ////////////////////////////
+    // Write data to the block
+    ////////////////////////////
+    for(int i = 0; i < 16; i++){
+    dataBlock[i] = buffer[i];  
+    }
+    dataBlock[8] = 0xFF;
+    Serial.print(F("Writing data into block ")); Serial.print(blockAddr);
+    Serial.println(F(" Writing..."));
+    dump_byte_array(dataBlock, 16); Serial.println();
+    status = (MFRC522::StatusCode) mfrc522.MIFARE_Write(blockAddr, dataBlock, 16);
+    if (status != MFRC522::STATUS_OK) {
+        Serial.print(F("MIFARE_Write() failed: "));
+        Serial.println(mfrc522.GetStatusCodeName(status));
+    }
     Serial.println();
 
-    dump_byte_array_lcd(buffer, 10);
+    /*
+    //////////////////////////////////////
+    // Read back the data from the block
+    //////////////////////////////////////
+    Serial.print(F("Reading data from block ")); Serial.print(blockAddr);
+    Serial.println(F(" ..."));
+    status = (MFRC522::StatusCode) mfrc522.MIFARE_Read(blockAddr, buffer, &size);
+    if (status != MFRC522::STATUS_OK) {
+        Serial.print(F("MIFARE_Read() failed: "));
+        Serial.println(mfrc522.GetStatusCodeName(status));
+    }
+    Serial.print(F("Data in block ")); Serial.print(blockAddr); Serial.println(F(":"));
+    dump_byte_array(buffer, 16); Serial.println();
+
+    /////////////////////////////////////////////////////
+    // Check that data in block is what we have written 
+    // by counting the number of bytes that are equal
+    /////////////////////////////////////////////////////
+    Serial.println(F("Checking result..."));
+    byte count = 0;
+    for (byte i = 0; i < 16; i++) {
+        // Compare buffer (what we've read) with dataBlock (what we've written)
+        if (buffer[i] == dataBlock[i])
+            count++;
+    }
+    Serial.print(F("Number of bytes that match = ")); Serial.println(count);
+    if (count == 16) {
+        Serial.println(F("Success :-)"));
+    } else {
+        Serial.println(F("Failure, no match :-("));
+        Serial.println(F("  perhaps the write didn't work properly..."));
+    }
+    */
+    Serial.println();
 
     //////////////
     // Halt PICC
@@ -153,6 +216,12 @@ void loop() {
     // Stop encryption on PCD
     ///////////////////////////
     mfrc522.PCD_StopCrypto1();
+
+    Wire.beginTransmission(8);
+    Wire.write("x is ");        // sends five bytes
+    Wire.write(x);              // sends one byte
+    Wire.endTransmission();
+    delay(100);
 }
 
 
@@ -164,23 +233,4 @@ void dump_byte_array(byte *buffer, byte bufferSize) {
         Serial.print(buffer[i] < 0x10 ? " 0" : " ");
         Serial.print(buffer[i], HEX);
     }
-}
-
-void dump_byte_array_lcd(byte *buffer, byte bufferSize) {
-    lcd.clear();
-    lcd.setCursor(0,0);
-    for (byte i = 0; i < bufferSize; i++) {
-        if(i==5){
-            lcd.setCursor(0,1);
-        }
-        if(i!=0 || i!=5){
-            lcd.print(" ");
-        }
-        lcd.print(buffer[i] < 0x10 ? "0" : "");
-        lcd.print(buffer[i], HEX);
-    }
-    delay(3000);
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("Please Scan Tag");
 }
