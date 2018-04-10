@@ -17,11 +17,12 @@
 
 TMRpcm audio;
 #define SD_ChipSelectPin 8
+#define led
 
 void setup() {
   audio.speakerPin = 9;
-  pinMode(6, OUTPUT);
-  digitalWrite(6, LOW);
+  pinMode(led, OUTPUT);
+  digitalWrite(led, LOW);
   Wire.begin(8);                // join i2c bus with address #8
   Wire.onReceive(receiveEvent); // register event
   Serial.begin(9600);           // start serial for output
@@ -45,10 +46,10 @@ void receiveEvent(int howMany) {
   int x = Wire.read();    // receive byte as an integer
   Serial.println(x);         // print the integer
   if(x==200){
-    digitalWrite(6, HIGH);
+    digitalWrite(led, HIGH);
     audio.setVolume(5);
     audio.play("test.wav");
     delay(13000);
-    digitalWrite(6, LOW);
+    digitalWrite(led, LOW);
   }
 }
