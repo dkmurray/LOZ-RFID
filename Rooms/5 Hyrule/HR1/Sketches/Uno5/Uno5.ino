@@ -32,7 +32,7 @@
 #define SS_PIN          10
 
 #define LED_PIN     14
-#define NUM_LEDS    50
+#define NUM_LEDS    59
 #define BRIGHTNESS  255
 #define LED_TYPE    WS2811
 #define COLOR_ORDER GRB

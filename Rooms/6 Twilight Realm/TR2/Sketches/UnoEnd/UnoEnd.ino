@@ -167,18 +167,33 @@ void loop() {
     Wire.endTransmission();
     delay(100);
 
+    uint8_t brightness = 255;
+    uint8_t colorIndex = 0;
+    /*CRGB colors[8] = [
+        CRGB::Yellow, // Triforce
+        CRGB::Red,    // Cauldron
+        CRGB::Green,  // Boomerang
+        CRGB::Red,    // Fyrus
+
+        CRGB::Blue,   // Clawshot
+        CRGB::Red,    // Ganon
+        CRGB::Yellow, // Lightning
+        CRGB::Grey,   // Wolf
+    ];*/
+
     for(int i = 0; i < 8; i++){
         if(buffer[i] == 0xFF){
-            leds[i] = ColorFromPalette( currentPalette, i, brightness, currentBlending);
-            leds[i+8] = ColorFromPalette( currentPalette, i, brightness, currentBlending);
+            leds[i] = currentPalette[i];
+            leds[i+8] = currentPalette[i];
         }
         else{
-            leds[i] = CRGB:Black;
-            leds[i+8] = CRGB:Black;
-        }  
+            leds[i] = CRGB::Black;
+            leds[i+8] = CRGB::Black;
+        }
+        colorIndex++;
     }
     FastLED.show();
-    delay(5000);
+    delay(10500);
     for(int i = 0; i < NUM_LEDS; i++){
         leds[i] = CRGB::Black;
     }

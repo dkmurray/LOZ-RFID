@@ -183,7 +183,7 @@ void loop() {
     Wire.write(x);              // sends one byte
     Wire.endTransmission();
     delay(100);
-    ledTest(4500);
+    ledTest(3500);
 }
 
 
